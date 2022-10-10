@@ -1,5 +1,3 @@
-# Virtual Coworker Admin Application Documentation
-
 ## Introduction
 Documentation to get you up to speed on the ins and outs of the Web Admin Application.
 
@@ -18,24 +16,25 @@ Documentation to get you up to speed on the ins and outs of the Web Admin Applic
 The Admin Application is a Full Stack Ruby on Rails Application.
 
 `As of Oct 2022`
-Programming Language: Ruby 3.0.3
-Framework: Ruby on Rails 6.1.4
-Database: PostgreSQL
-Background Processing: Sidekiq
-In Memory Data Store: Redis
-Frontend Framework: Hotwire/Turbo
-CSS Framework: Bootstrap 5
-Cloud Service: Heroku
-Monitoring: Rollbar
-S3 Bucket: Digital Ocean
-Authentication: Devise
-Email Delivery: Sendgrid
-SMS Delivery: Twilio
+- Programming Language: Ruby 3.0.3
+- Framework: Ruby on Rails 6.1.4
+- Database: PostgreSQL
+- Background Processing: Sidekiq
+- In Memory Data Store: Redis
+- Frontend Framework: Hotwire/Turbo
+- CSS Framework: Bootstrap 5
+- Cloud Service: Heroku
+- Monitoring: Rollbar
+- S3 Bucket: Digital Ocean
+- Authentication: Devise
+- Email Delivery: Sendgrid
+- SMS Delivery: Twilio
 
 ## Overview
 The Virtual Coworker Admin Application handles everything from start to finish. Meaning from Onboarding and Ending Staff and Client Engagements. Once you view the Codebase it would be like a can of worms. But mainly there are 3 objects were the application revolves on, `Contractor`, `Client` and `Invoices`. These Objects are pretty self explanatory but let's start with how are we onboarding new Staff or `Contractors`
 
 ![Initial Flow](./photos/initial_flow.png)
+
 Pretty simple but this is only a summarized version of the flow. To explain a bit further, It all starts with the Client. So technically and business logic speaking, Clients can have many Staff or Contractors.
 So if a Client already exists in our Application e.g he/she wants to add a new staff, Will go to the next step of creating a `Contractor` Record.
 
