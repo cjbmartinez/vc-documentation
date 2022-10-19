@@ -1,6 +1,9 @@
 ## Introduction
 Documentation to get you up to speed on the ins and outs of the Web Admin Application.
 
+Aside from this documentation, If you are a developer and a contributor of the codebase,
+You can run the application locally and access more on the code-level documentation and go to `localhost:3000/docs`. The docs are generated from YARD https://yardoc.org/
+
 ## Table of Contents
 
 - [Dependencies](#dependencies-and-libraries)
@@ -10,8 +13,9 @@ Documentation to get you up to speed on the ins and outs of the Web Admin Applic
 - [Invoices](#invoices)
 - [Automated Payment Integration](#automated-payment-integration)
 - [Payslips](#payslips)
+- [Time Tracking](#time-tracking)
+- [2FA](#2fa)
 - [Refunds](#refunds)
-
 ## Dependencies and Libraries
 The Admin Application is a Full Stack Ruby on Rails Application.
 
@@ -72,13 +76,17 @@ Once a template is selected, We then create a document/contractor out of that te
 3. Send Email Invite
 
 Once we already gone through this process, We then just monitor the documents through our application. And all unsigned contracts are always fetched directly from SignNow API to ensure
-that we always have to up-to-date data and status of that document
+that we always have to up-to-date data and status of that document.
+
+The goal was to have the exact same thing (but better and faster) that was present on the SignNow Dashboard into our application. Because at the end we want that our application will be the centralized source of data.
 ![Sign Now Documents](./photos/sign_now_docs.png)
 
 ## Xero Integration
 Another Third Party Provider that we have is [Xero](https://xero.com/) and to keep it short, This is for Accounting and mainly Invoices
 
 So each Invoice that we create in our application, Is then synced to Xero. And the syncing process goes on both ends. Meaning any changes from Xero is also synced to our application. This happens via a background worker that we ran every hour to sync our recent updated or created invoices from Xero.
+
+Aside from Invoices, We also create and sync our Client Records from our appliaction to Xero.
 
 Luckily on this one, Xero provides a Ruby library that we can utilize for our integration that you can view [here](https://github.com/XeroAPI/xero-ruby). Won't be explaining much further on this one since the link provided will give all information you need for authorization and communicating with their API.
 
@@ -88,12 +96,20 @@ Importantly to take note, Our application has two `Companies` record, Virtual Co
 
 And those companies exists in Xero as their own separate organization. So that every Invoice will go to their respective Organization.
 
+To summarize, These are the things we do in Xero
+1. Create Invoices from Web Admin to Xero (And Syncing)
+2. Creating Invoice Notes for Invoices (To act as history on what are the things that had been done, like email was sent, was approved etc.)
+3. Creating Payments (When Invoices were paid via our Third Party Payment Provider e.g Bpoint)
+4. Creating Client Records from Web Admin to Xero (And Syncing)
+
 Another thing to take note that, For Invoices, Xero will always be the source of truth. So everytime we create or update an Invoice in our application we always follow what Xero computed. One of the reasons is that for PTY Invoices, Every Invoice will have a GST (10%) addition. And a challenge on our end was it was quite hard to identify the behavior of Xero on how it computed GST. To resolve it, We would always let Xero be the source of truth. You would often see a code like this on invoice creation
 ```
 invoice.save # We save it in our database
 invoice.create_xero # We then sync the created record to Xero
 invoice.update_from_xero # Then we fetch the record created from Xero and update our own record with it
 ```
+
+One thing out of scope for now, That is still being done in the Xero Dashboard is reconcilation of payments since currently there is no API endpoint for it.
 
 ## Invoices
 We've already discussed about the Initial Invoice which was mentioned above. But after that, Then what? What we do is we create Invoices in Batch every month. This would be a regular schedule
@@ -138,6 +154,8 @@ def create_invoice_history_in_xero(details:)
 end
 ```
 
+Aside from Batch Invoices, We also create different kinds of invoices like NOR, BOND and etc.
+
 ## Automated Payment Integration
 Now that we have Invoices and an Accounting Service via Xero, Then probably we should also have a way to pay those invoices. Currently as of Oct 2022 these are our payment providers
 1. Bpoint
@@ -169,7 +187,31 @@ For External staffs, Payroll is conducted once a month every 21st of the month
 
 We handle the creation, sending and creating PDF files for these payslips.
 
+And in Payroll creation, We don't only include the staffs logged hours. We also consider allowances and loans from our Staffs
+
+And also for Allowances, We also allow either a recurring allowance (like food allowance) that is added to the staffs payroll everytime and a one-time allowance like bonuses and etc.
+
+![Refund Approval Page](./photos/payslip_items.png)
+
+
 But as of now processing payroll is handled outside of our application via Wise
+
+## Time Tracking
+
+We handle our staff's Time Tracking. And we do it using Worksnaps. Each staff is required to install the Worksnaps desktop application to track their time at work. And what we do in our application, Is fetch those time entries from Worksnaps -> our Application. We utilize Heroku Scheduler and run a Sync Worker every hour, That will sync our staff's time entries to our application.
+
+And we apply rules on our staff's logged hours. So it will all depend on the staff's required hours of work. So let's say Staff A has logged 8 hours of work in Worksnaps. But in the application, he/she is only
+required to work for 6 hours a day. We then only logged 6 hours of work for that day for Staff A.
+
+Any overtime should be requested by Staff. And those overtime approval request will require the approval of their client.
+
+## 2FA
+To provide a secured application to our users, We are implementing Two Factor Authentication. So each user has a choice between two 2FA methods, One is App Authentication and other is SMS Authentication. And we the required 2FA every 30 days.
+
+![Refund Approval Page](./photos/two_fa.png)
+
+For App Authentication, We provide sets of mobile authenticators to choose from that they can use.
+For SMS Authentication, We then use Twilio as an SMS Service for sending authentication codes via SMS. And we support mobile numbers from different parts of the world
 
 ## Refunds
 Everything always comes to an end. And lets say a contractor engagement has been cancelled, What happens next ? We then create a `Refund` record for that staff and its client
@@ -188,8 +230,6 @@ And since we have an Integration for our Invoice Payments, We also have an autom
 
 Now why do we need the Refund to be approved by the client ? Because we want to ensure and remind them that if they want to directly hire the staff, They should pay a certain fee based on their initial contract from the start.
 ![Refund Approval Page](./photos/refund_approval.png)
-
-
 
 ## Contributing
 
