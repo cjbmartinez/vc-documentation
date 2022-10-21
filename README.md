@@ -17,6 +17,7 @@ You can run the application locally and access more on the code-level documentat
 - [2FA](#2fa)
 - [Refunds](#refunds)
 - [Common Troubleshooting](#common-troubleshooting)
+
 ## Dependencies and Libraries
 The Admin Application is a Full Stack Ruby on Rails Application.
 
