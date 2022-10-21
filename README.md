@@ -16,6 +16,7 @@ You can run the application locally and access more on the code-level documentat
 - [Time Tracking](#time-tracking)
 - [2FA](#2fa)
 - [Refunds](#refunds)
+- [Common Troubleshooting](#common-troubleshooting)
 ## Dependencies and Libraries
 The Admin Application is a Full Stack Ruby on Rails Application.
 
@@ -50,6 +51,7 @@ For each New Contractor or Staff that we have, We send in 2 documents or contrac
 2. Client Services Agreement
 
 So this will always apply for every new contractor. Even if the Client has more than 1 staff already.
+And to take note, We don't store card details to our application, Though we store the CVV/Card Code but we encrypt it first before storing it to our database. And the rest of the card details are then stored to our third party payment providers
 
 And once these documents are signed, We then proceed to creating an Initial Invoice to the Client. So this would be an Invoice for a month's pay for the Contractor/Staff
 
@@ -230,6 +232,31 @@ And since we have an Integration for our Invoice Payments, We also have an autom
 
 Now why do we need the Refund to be approved by the client ? Because we want to ensure and remind them that if they want to directly hire the staff, They should pay a certain fee based on their initial contract from the start.
 ![Refund Approval Page](./photos/refund_approval.png)
+
+## Common Troubleshooting
+
+- One of the most common issues occuring is Xero Authentication. Rarely happens mostly every 2 months onwards. So this issue occurs when the authorization grant has expired which causes all API calls to Xero to invalid and returns a 404.
+Troublesome issue but can be resolved easily by reauthenticating our Xero account via the Web Admin. Just go to Company Setting and go to both VC Inc and PTY respectively. And on each company page just click on the Xero Accounting Link to
+reauthenticate our Xero accouunt to resolve the issue
+![Refund Approval Page](./photos/companies.png)
+![Refund Approval Page](./photos/company.png)
+
+Once we've reauthenticated our Company accounts to Xero, Then the issue will be resolved
+
+- Another Issue encountered is when our SignNow account has changed password, Thus it will result to issues with our API Integration with SignNow. Since API Authorization requires username and password of our SignNow Account.
+When this happens, We just need to go to our Heroku Dashboard and update our ENV Variables for SIGNNOW_USERNAME and SIGNNOW_PASSWORD.
+
+- With AuthorizeNet Payments, We often receive a FDC Omaha error when we try to process payments. Quite a weird issue but incase you've encountered this one, The Payment just needs to be reprocessed and on the second try, It will succeed.
+Now why does it succeeds on the second try ? Strangely when we receive a FDC Omaha Error, The resolve is not to pass the CVV to the payment request. You will see something like this
+```
+if invoice.client.card_code.present? && %w[217 200].exclude?(invoice.payment_transaction_logs.last&.api_response_code)
+  transaction_request.profile.paymentProfile.cardCode = Encryption.decrypt(invoice.client.card_code)
+end
+```
+
+So 217 and 200 API response codes from AuthorizeNet represent the FDC Omaha Error. And whenever the last transaction log has a FDC Omaha Error, We just skip sending the CVV to the payment request which then resolves the issue
+
+- When the application is slowing down, Most often we just reboot our Heroku Dynos with `heroku restart -app vc-xero`. Currently as of Oct 2022, We are running on a 1 GB memory Dyno and 1 Puma Worker with 8 Threads and with our current user traffic that is mostly sufficient enough.
 
 ## Contributing
 
